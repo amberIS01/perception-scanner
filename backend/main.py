@@ -1,287 +1,308 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
+from sqlalchemy.orm import Session
 
-app = FastAPI()
+from config import settings
+from database import init_db, get_db, DatabaseService
+from services.sources import (
+    GooglePlaySource,
+    IOSAppStoreSource,
+    YouTubeSource,
+    ProductHuntSource,
+    RedditSource
+)
+from services.sentiment import sentiment_analyzer
 
-# Configure CORS
+# Initialize database
+init_db()
+
+app = FastAPI(
+    title=settings.app_name,
+    debug=settings.debug
+)
+
+# Initialize sources
+google_play_source = GooglePlaySource()
+ios_app_store_source = IOSAppStoreSource()
+youtube_source = YouTubeSource()
+product_hunt_source = ProductHuntSource()
+reddit_source = RedditSource()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite default port
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
 class SourceConfig(BaseModel):
-    youtube_channel: Optional[str] = None
-    instagram_account: Optional[str] = None
+    youtube_video: Optional[str] = None
     product_hunt_product: Optional[str] = None
     google_play_app: Optional[str] = None
     ios_app: Optional[str] = None
-    google_workspace_app: Optional[str] = None
+    reddit_subreddit: Optional[str] = None
+
 
 class ProductReviewRequest(BaseModel):
     product_name: str
     sources: SourceConfig
 
+
+def process_source_result(source_result) -> dict:
+    """Process source result and add sentiment analysis."""
+    reviews = [r.model_dump() for r in source_result.reviews]
+    sentiment = sentiment_analyzer.analyze_reviews(reviews)
+
+    return {
+        "platform": source_result.platform,
+        "identifier": source_result.identifier,
+        "average_rating": source_result.average_rating,
+        "total_reviews": source_result.total_reviews,
+        "reviews": reviews,
+        "error": source_result.error,
+        "sentiment": {
+            "overall": sentiment["overall"],
+            "breakdown": sentiment["breakdown"],
+            "average_score": sentiment["average_score"],
+            "keywords": sentiment["keywords"][:10]
+        }
+    }
+
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "app": settings.app_name,
+        "sources": {
+            "google_play": {"available": True, "requires_key": False},
+            "ios_app_store": {"available": True, "requires_key": False},
+            "youtube": {
+                "available": settings.youtube_api_key is not None,
+                "requires_key": True
+            },
+            "product_hunt": {
+                "available": settings.product_hunt_api_token is not None,
+                "requires_key": True
+            },
+            "reddit": {"available": True, "requires_key": False},
+        }
+    }
+
+
 @app.post("/api/reviews")
-async def get_reviews(request: ProductReviewRequest):
-    # Hardcoded reviews database organized by source type
-    reviews_by_source = {
-        "youtube": [
+async def get_reviews(request: ProductReviewRequest, db: Session = Depends(get_db)):
+    """Fetch reviews from configured sources and store in database."""
+    db_service = DatabaseService(db)
+
+    # Get or create product
+    product = db_service.get_or_create_product(
+        name=request.product_name,
+        google_play_id=request.sources.google_play_app,
+        ios_app_id=request.sources.ios_app,
+        youtube_video_id=request.sources.youtube_video,
+        product_hunt_slug=request.sources.product_hunt_product,
+        reddit_subreddit=request.sources.reddit_subreddit
+    )
+
+    result = {
+        "product_name": request.product_name,
+        "product_id": product.id,
+        "sources": [],
+        "combined_sentiment": None,
+        "errors": []
+    }
+
+    all_reviews = []
+    count = settings.default_review_count
+
+    # Google Play Store
+    if request.sources.google_play_app:
+        gplay_result = await google_play_source.fetch_reviews(
+            request.sources.google_play_app,
+            count=count
+        )
+        processed = process_source_result(gplay_result)
+        result["sources"].append(processed)
+
+        if processed["error"]:
+            result["errors"].append({
+                "platform": "Google Play Store",
+                "error": processed["error"]
+            })
+        else:
+            all_reviews.extend(processed["reviews"])
+            # Save to database
+            db_service.save_reviews(product.id, "Google Play Store", processed["reviews"])
+            db_service.save_sentiment_snapshot(product.id, "Google Play Store", processed["sentiment"])
+
+    # iOS App Store
+    if request.sources.ios_app:
+        ios_result = await ios_app_store_source.fetch_reviews(
+            request.sources.ios_app,
+            count=count
+        )
+        processed = process_source_result(ios_result)
+        result["sources"].append(processed)
+
+        if processed["error"]:
+            result["errors"].append({
+                "platform": "iOS App Store",
+                "error": processed["error"]
+            })
+        else:
+            all_reviews.extend(processed["reviews"])
+            db_service.save_reviews(product.id, "iOS App Store", processed["reviews"])
+            db_service.save_sentiment_snapshot(product.id, "iOS App Store", processed["sentiment"])
+
+    # YouTube
+    if request.sources.youtube_video:
+        yt_result = await youtube_source.fetch_reviews(
+            request.sources.youtube_video,
+            count=count
+        )
+        processed = process_source_result(yt_result)
+        result["sources"].append(processed)
+
+        if processed["error"]:
+            result["errors"].append({
+                "platform": "YouTube",
+                "error": processed["error"]
+            })
+        else:
+            all_reviews.extend(processed["reviews"])
+            db_service.save_reviews(product.id, "YouTube", processed["reviews"])
+            db_service.save_sentiment_snapshot(product.id, "YouTube", processed["sentiment"])
+
+    # Product Hunt
+    if request.sources.product_hunt_product:
+        ph_result = await product_hunt_source.fetch_reviews(
+            request.sources.product_hunt_product,
+            count=count
+        )
+        processed = process_source_result(ph_result)
+        result["sources"].append(processed)
+
+        if processed["error"]:
+            result["errors"].append({
+                "platform": "Product Hunt",
+                "error": processed["error"]
+            })
+        else:
+            all_reviews.extend(processed["reviews"])
+            db_service.save_reviews(product.id, "Product Hunt", processed["reviews"])
+            db_service.save_sentiment_snapshot(product.id, "Product Hunt", processed["sentiment"])
+
+    # Reddit
+    if request.sources.reddit_subreddit:
+        reddit_result = await reddit_source.fetch_reviews(
+            request.sources.reddit_subreddit,
+            count=count
+        )
+        processed = process_source_result(reddit_result)
+        result["sources"].append(processed)
+
+        if processed["error"]:
+            result["errors"].append({
+                "platform": "Reddit",
+                "error": processed["error"]
+            })
+        else:
+            all_reviews.extend(processed["reviews"])
+            db_service.save_reviews(product.id, "Reddit", processed["reviews"])
+            db_service.save_sentiment_snapshot(product.id, "Reddit", processed["sentiment"])
+
+    # Combined sentiment analysis
+    if all_reviews:
+        combined = sentiment_analyzer.analyze_reviews(all_reviews)
+        result["combined_sentiment"] = {
+            "overall": combined["overall"],
+            "breakdown": combined["breakdown"],
+            "average_score": combined["average_score"],
+            "keywords": combined["keywords"][:20]
+        }
+        # Save combined sentiment snapshot
+        db_service.save_sentiment_snapshot(product.id, None, combined)
+
+    return result
+
+
+@app.get("/api/products/{product_name}/history")
+async def get_product_history(product_name: str, days: int = 30, db: Session = Depends(get_db)):
+    """Get sentiment history for a product."""
+    db_service = DatabaseService(db)
+    product = db_service.get_product_by_name(product_name)
+
+    if not product:
+        return {"error": f"Product '{product_name}' not found"}
+
+    history = db_service.get_sentiment_history(product.id, days=days)
+
+    return {
+        "product_name": product_name,
+        "history": [
             {
-                "id": 1,
-                "user": "TechReviewer123",
-                "rating": 5,
-                "comment": "Great tutorial! This product has really helped streamline my workflow. The interface is intuitive and the features are exactly what I needed.",
-                "date": "2024-12-05",
-                "likes": 342,
-                "platform": "YouTube"
-            },
-            {
-                "id": 2,
-                "user": "ProductivityGuru",
-                "rating": 4,
-                "comment": "Solid product, though there's a bit of a learning curve. Once you get past that, it's incredibly powerful.",
-                "date": "2024-12-01",
-                "likes": 128,
-                "platform": "YouTube"
-            },
-            {
-                "id": 3,
-                "user": "DigitalNomad",
-                "rating": 5,
-                "comment": "This has become essential to my daily routine. Can't imagine working without it now!",
-                "date": "2024-11-28",
-                "likes": 256,
-                "platform": "YouTube"
+                "platform": s.platform or "Combined",
+                "overall": s.overall_sentiment,
+                "average_score": s.average_score,
+                "breakdown": {
+                    "positive": s.positive_count,
+                    "negative": s.negative_count,
+                    "neutral": s.neutral_count
+                },
+                "total_reviews": s.total_reviews,
+                "timestamp": s.created_at.isoformat()
             }
-        ],
-        "instagram": [
-            {
-                "id": 1,
-                "user": "@startuplife",
-                "rating": 5,
-                "comment": "Game changer for our team! 🚀 Highly recommend to anyone looking to boost productivity.",
-                "date": "2024-12-07",
-                "likes": 892,
-                "platform": "Instagram"
-            },
-            {
-                "id": 2,
-                "user": "@creativeagency",
-                "rating": 4,
-                "comment": "Love the clean design and smooth user experience. A few features could be improved but overall excellent!",
-                "date": "2024-12-03",
-                "likes": 445,
-                "platform": "Instagram"
-            },
-            {
-                "id": 3,
-                "user": "@techenthusiast",
-                "rating": 5,
-                "comment": "Finally found the perfect solution! The integration options are fantastic. 💯",
-                "date": "2024-11-30",
-                "likes": 621,
-                "platform": "Instagram"
-            }
-        ],
-        "product_hunt": [
-            {
-                "id": 1,
-                "user": "sarah_founder",
-                "rating": 5,
-                "comment": "Congrats on the launch! This is exactly what the market needs. The execution is flawless and the value proposition is clear.",
-                "date": "2024-12-08",
-                "upvotes": 234,
-                "platform": "Product Hunt"
-            },
-            {
-                "id": 2,
-                "user": "dev_mike",
-                "rating": 4,
-                "comment": "Really impressive product. The API documentation could use some work, but the core functionality is solid.",
-                "date": "2024-12-08",
-                "upvotes": 189,
-                "platform": "Product Hunt"
-            },
-            {
-                "id": 3,
-                "user": "entrepreneur_jane",
-                "rating": 5,
-                "comment": "Been using this in beta for weeks. It's revolutionized how we work. Definitely deserves Product of the Day!",
-                "date": "2024-12-08",
-                "upvotes": 301,
-                "platform": "Product Hunt"
-            }
-        ],
-        "google_play": [
-            {
-                "id": 1,
-                "user": "Alex Thompson",
-                "rating": 5,
-                "comment": "Best app in its category! Fast, reliable, and the UI is beautiful. Worth every penny of the subscription.",
-                "date": "2024-12-06",
-                "helpful": 156,
-                "platform": "Google Play Store"
-            },
-            {
-                "id": 2,
-                "user": "Maria Garcia",
-                "rating": 4,
-                "comment": "Very useful app. Sometimes crashes on older devices but overall works great. Customer support is responsive.",
-                "date": "2024-12-02",
-                "helpful": 89,
-                "platform": "Google Play Store"
-            },
-            {
-                "id": 3,
-                "user": "James Wilson",
-                "rating": 5,
-                "comment": "Downloaded this on a whim and now use it daily. Syncs perfectly across all my devices. Highly recommended!",
-                "date": "2024-11-29",
-                "helpful": 203,
-                "platform": "Google Play Store"
-            },
-            {
-                "id": 4,
-                "user": "Lisa Chen",
-                "rating": 3,
-                "comment": "Good app but the free tier is too limited. Would be nice to have more features available without subscription.",
-                "date": "2024-11-25",
-                "helpful": 67,
-                "platform": "Google Play Store"
-            }
-        ],
-        "ios_app": [
-            {
-                "id": 1,
-                "user": "TechSavvyUser",
-                "rating": 5,
-                "comment": "Phenomenal app! Integrates beautifully with iOS ecosystem. The widgets are particularly well-designed.",
-                "date": "2024-12-07",
-                "helpful": 178,
-                "platform": "iOS App Store"
-            },
-            {
-                "id": 2,
-                "user": "DesignerDave",
-                "rating": 5,
-                "comment": "Finally, an app that looks native and performs flawlessly. The attention to detail is incredible.",
-                "date": "2024-12-04",
-                "helpful": 145,
-                "platform": "iOS App Store"
-            },
-            {
-                "id": 3,
-                "user": "BusyMom2023",
-                "rating": 4,
-                "comment": "Very helpful for organizing my day. Would love to see more customization options in future updates.",
-                "date": "2024-12-01",
-                "helpful": 92,
-                "platform": "iOS App Store"
-            },
-            {
-                "id": 4,
-                "user": "StudentLife",
-                "rating": 5,
-                "comment": "This app has been a lifesaver during finals week. Clean interface, powerful features. 10/10!",
-                "date": "2024-11-27",
-                "helpful": 234,
-                "platform": "iOS App Store"
-            }
-        ],
-        "google_workspace": [
-            {
-                "id": 1,
-                "user": "IT Manager - TechCorp",
-                "rating": 5,
-                "comment": "Seamless integration with Google Workspace. Our team adopted it immediately. The admin controls are comprehensive.",
-                "date": "2024-12-05",
-                "helpful": 89,
-                "platform": "Google Workspace Marketplace"
-            },
-            {
-                "id": 2,
-                "user": "Operations Director",
-                "rating": 4,
-                "comment": "Great add-on for Workspace. Saves us hours every week. Pricing is a bit high for small teams though.",
-                "date": "2024-12-01",
-                "helpful": 56,
-                "platform": "Google Workspace Marketplace"
-            },
-            {
-                "id": 3,
-                "user": "Project Manager",
-                "rating": 5,
-                "comment": "Works perfectly with Gmail and Calendar. The permissions system is well thought out. Highly recommend for enterprise use.",
-                "date": "2024-11-28",
-                "helpful": 112,
-                "platform": "Google Workspace Marketplace"
-            }
+            for s in history
         ]
     }
 
-    # Build response based on configured sources
-    result = {
-        "product_name": request.product_name,
-        "sources": []
+
+@app.get("/api/products/{product_name}/reviews")
+async def get_stored_reviews(
+    product_name: str,
+    platform: Optional[str] = None,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """Get stored reviews for a product."""
+    db_service = DatabaseService(db)
+    product = db_service.get_product_by_name(product_name)
+
+    if not product:
+        return {"error": f"Product '{product_name}' not found"}
+
+    reviews = db_service.get_reviews(product.id, platform=platform, limit=limit)
+
+    return {
+        "product_name": product_name,
+        "total": len(reviews),
+        "reviews": [
+            {
+                "id": r.external_id,
+                "platform": r.platform,
+                "user": r.user,
+                "rating": r.rating,
+                "comment": r.comment,
+                "date": r.review_date,
+                "sentiment_score": r.sentiment_score,
+                "sentiment_label": r.sentiment_label
+            }
+            for r in reviews
+        ]
     }
 
-    if request.sources.youtube_channel:
-        result["sources"].append({
-            "platform": "YouTube",
-            "identifier": request.sources.youtube_channel,
-            "average_rating": 4.7,
-            "total_reviews": 3,
-            "reviews": reviews_by_source["youtube"]
-        })
 
-    if request.sources.instagram_account:
-        result["sources"].append({
-            "platform": "Instagram",
-            "identifier": request.sources.instagram_account,
-            "average_rating": 4.7,
-            "total_reviews": 3,
-            "reviews": reviews_by_source["instagram"]
-        })
-
-    if request.sources.product_hunt_product:
-        result["sources"].append({
-            "platform": "Product Hunt",
-            "identifier": request.sources.product_hunt_product,
-            "average_rating": 4.7,
-            "total_reviews": 3,
-            "reviews": reviews_by_source["product_hunt"]
-        })
-
-    if request.sources.google_play_app:
-        result["sources"].append({
-            "platform": "Google Play Store",
-            "identifier": request.sources.google_play_app,
-            "average_rating": 4.2,
-            "total_reviews": 4,
-            "reviews": reviews_by_source["google_play"]
-        })
-
-    if request.sources.ios_app:
-        result["sources"].append({
-            "platform": "iOS App Store",
-            "identifier": request.sources.ios_app,
-            "average_rating": 4.8,
-            "total_reviews": 4,
-            "reviews": reviews_by_source["ios_app"]
-        })
-
-    if request.sources.google_workspace_app:
-        result["sources"].append({
-            "platform": "Google Workspace",
-            "identifier": request.sources.google_workspace_app,
-            "average_rating": 4.7,
-            "total_reviews": 3,
-            "reviews": reviews_by_source["google_workspace"]
-        })
-
-    return result
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "main:app",
+        host=settings.host,
+        port=settings.port,
+        reload=settings.debug
+    )

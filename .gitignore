@@ -212,5 +212,32 @@ frontend/dist/
 frontend/dist-ssr/
 frontend/.vite/
 
-# Claude Code
+# Claude Code (at any level)
 .claude/
+**/.claude/
+.claude
+**/.claude
+
+# SQLite Database
+*.db
+*.db-journal
+
+# Audio/Video files (meeting recordings)
+*.mp3
+*.mp4
+*.wav
+
+# Personal notes and planning files
+me.md
+plan.md
+*.plan.md
+
+# Meeting transcripts
+meeting-transcript*.txt
+*-transcript*.txt
+202*-*-*.txt
+202*-*-*.mp3
+
+# Postman collections (may contain API keys)
+postman_collection.json
+*.postman_collection.json
