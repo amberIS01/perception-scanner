@@ -1,7 +1,6 @@
 import requests
 from app_store_web_scraper import AppStoreEntry
 from .base import BaseSource, Review, SourceResult
-from config import settings
 
 
 class IOSAppStoreSource(BaseSource):
@@ -11,7 +10,7 @@ class IOSAppStoreSource(BaseSource):
         try:
             response = requests.get(
                 f"https://itunes.apple.com/lookup?id={app_id}",
-                timeout=settings.request_timeout
+                timeout=30
             )
             data = response.json()
             return data.get("resultCount", 0) > 0
@@ -32,7 +31,7 @@ class IOSAppStoreSource(BaseSource):
 
             app = AppStoreEntry(
                 app_id=int(identifier),
-                country=settings.ios_app_store_country
+                country="us"
             )
             raw_reviews = list(app.reviews(limit=count))
 
@@ -43,8 +42,7 @@ class IOSAppStoreSource(BaseSource):
                     rating=float(r.rating),
                     comment=f"{r.title}: {r.content}" if r.title else r.content,
                     date=r.date.strftime('%Y-%m-%d') if r.date else '',
-                    platform=self.platform_name,
-                    app_version=r.app_version
+                    platform=self.platform_name
                 )
                 for r in raw_reviews
             ]

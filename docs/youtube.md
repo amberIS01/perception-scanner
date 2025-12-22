@@ -108,14 +108,14 @@ This means you can fetch approximately:
 
 ## Data Retrieved
 
-| Field      | Description                   |
-| ---------- | ----------------------------- |
-| id         | Comment thread ID             |
-| user       | Commenter's channel name      |
-| comment    | Comment text                  |
-| date       | Comment publish date          |
-| likes      | Number of likes on comment    |
-| user_image | Commenter's profile image URL |
+| Field   | Description                |
+| ------- | -------------------------- |
+| id      | Comment thread ID          |
+| user    | Commenter's channel name   |
+| comment | Comment text               |
+| date    | Comment publish date       |
+| likes   | Number of likes on comment |
+| rating  | Always null (no ratings)   |
 
 ## Terms & Conditions
 

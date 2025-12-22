@@ -11,10 +11,6 @@ class Review(BaseModel):
     date: str
     platform: str
     likes: Optional[int] = None
-    user_image: Optional[str] = None
-    title: Optional[str] = None
-    app_version: Optional[str] = None
-    url: Optional[str] = None
 
 
 class SourceResult(BaseModel):

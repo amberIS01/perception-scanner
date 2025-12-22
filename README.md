@@ -1,126 +1,59 @@
-# Hello World - FastAPI + React + shadcn/ui
+# Perception Scanner
 
-A full-stack application with a Python FastAPI backend and a React TypeScript frontend using shadcn/ui components.
-
-## Project Structure
-
-```
-.
-├── backend/          # FastAPI backend
-│   ├── main.py
-│   └── requirements.txt
-└── frontend/         # React frontend with shadcn/ui
-    ├── src/
-    │   ├── components/
-    │   │   └── ui/
-    │   ├── lib/
-    │   └── App.tsx
-    └── package.json
-```
-
-## Backend Setup (FastAPI)
-
-### Prerequisites
-- Python 3.8+
-
-### Installation
-
-1. Navigate to the backend directory:
-```bash
-cd backend
-```
-
-2. Create and activate a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-### Run the Backend
-
-```bash
-uvicorn main:app --reload
-```
-
-The API will be available at http://localhost:8000
-
-API Endpoints:
-- `GET /` - Returns a simple hello world message
-- `GET /api/hello` - Returns a hello world message from FastAPI
-
-## Frontend Setup (React + shadcn/ui)
-
-### Prerequisites
-- Node.js 18+
-- npm
-
-### Installation
-
-1. Navigate to the frontend directory:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-### Run the Frontend
-
-```bash
-npm run dev
-```
-
-The application will be available at http://localhost:5173
-
-## Running Both Servers
-
-You'll need two terminal windows:
-
-**Terminal 1 - Backend:**
-```bash
-cd backend
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-uvicorn main:app --reload
-```
-
-**Terminal 2 - Frontend:**
-```bash
-cd frontend
-npm run dev
-```
-
-Then open http://localhost:5173 in your browser.
+Aggregate and analyze product reviews from multiple platforms with sentiment analysis.
 
 ## Features
 
-- FastAPI backend with CORS support
-- React frontend with TypeScript
-- shadcn/ui components (Button, Card)
-- Tailwind CSS for styling
-- Full-stack "Hello World" integration
+- Fetch reviews from Google Play, iOS App Store, YouTube, Product Hunt, and Reddit
+- VADER-based sentiment analysis with keyword extraction
+- SQLite database for storing reviews and sentiment history
+- React dashboard with data visualization
 
-## Technologies Used
+## Quick Start
 
 ### Backend
-- FastAPI
-- Uvicorn
-- Python
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env      # Add your API keys (optional)
+uvicorn main:app --reload
+```
+
+Backend runs at http://localhost:8000
 
 ### Frontend
-- React 18
-- TypeScript
-- Vite
-- shadcn/ui
-- Tailwind CSS
-- Radix UI
 
-## Development
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-The frontend is configured to communicate with the backend at http://localhost:8000. The backend has CORS enabled for http://localhost:5173.
+Frontend runs at http://localhost:5173
+
+## API Keys (Optional)
+
+Only required if you want to use these sources:
+
+- **YouTube**: Get key from [Google Cloud Console](https://console.cloud.google.com/apis/credentials) (enable YouTube Data API v3)
+- **Product Hunt**: Get token from [Product Hunt API](https://api.producthunt.com/v2/docs)
+
+Google Play, iOS App Store, and Reddit work without API keys.
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check with source availability |
+| POST | `/api/reviews` | Fetch reviews from configured sources |
+| GET | `/api/products/{name}/history` | Sentiment history over time |
+| GET | `/api/products/{name}/reviews` | Stored reviews with optional platform filter |
+
+## Tech Stack
+
+**Backend**: FastAPI, SQLAlchemy, VADER Sentiment, google-play-scraper, app-store-web-scraper
+
+**Frontend**: React 19, TypeScript, Vite, Tailwind CSS, shadcn/ui, Recharts

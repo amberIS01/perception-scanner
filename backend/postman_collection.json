@@ -1,0 +1,60 @@
+{
+	"info": {
+		"_postman_id": "perception-scanner-api",
+		"name": "Perception Scanner API",
+		"description": "API collection for testing the Perception Scanner review aggregator",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [{"key": "base_url", "value": "http://localhost:8000", "type": "string"}],
+	"item": [
+		{
+			"name": "Google Play Reviews",
+			"item": [
+				{"name": "Get WhatsApp Reviews", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"WhatsApp\",\n    \"sources\": {\"google_play_app\": \"com.whatsapp\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}},
+				{"name": "Get Zomato Reviews", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"Zomato\",\n    \"sources\": {\"google_play_app\": \"com.application.zomato\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}},
+				{"name": "Test Invalid App", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"Fake\",\n    \"sources\": {\"google_play_app\": \"com.fake.app\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}}
+			]
+		},
+		{
+			"name": "iOS App Store Reviews",
+			"item": [
+				{"name": "Get WhatsApp Reviews (iOS)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"WhatsApp\",\n    \"sources\": {\"ios_app\": \"310633997\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}},
+				{"name": "Get Spotify Reviews (iOS)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"Spotify\",\n    \"sources\": {\"ios_app\": \"324684580\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}},
+				{"name": "Test Invalid App (iOS)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"Fake\",\n    \"sources\": {\"ios_app\": \"999999999\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}}
+			]
+		},
+		{
+			"name": "YouTube Comments",
+			"description": "Requires YOUTUBE_API_KEY env variable",
+			"item": [
+				{"name": "Get Video Comments", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"Rick Astley Video\",\n    \"sources\": {\"youtube_channel\": \"dQw4w9WgXcQ\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}},
+				{"name": "Test Invalid Video", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"Fake\",\n    \"sources\": {\"youtube_channel\": \"invalidid123\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}}
+			]
+		},
+		{
+			"name": "Product Hunt Reviews",
+			"description": "Requires PRODUCT_HUNT_API_TOKEN env variable",
+			"item": [
+				{"name": "Get Notion Reviews", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"Notion\",\n    \"sources\": {\"product_hunt_product\": \"notion\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}},
+				{"name": "Get Figma Reviews", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"Figma\",\n    \"sources\": {\"product_hunt_product\": \"figma\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}},
+				{"name": "Get Linear Reviews", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"Linear\",\n    \"sources\": {\"product_hunt_product\": \"linear\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}}
+			]
+		},
+		{
+			"name": "Reddit Comments",
+			"description": "No API key needed - uses public JSON endpoints",
+			"item": [
+				{"name": "Get r/notion Comments", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"Notion\",\n    \"sources\": {\"reddit_subreddit\": \"notion\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}},
+				{"name": "Get r/spotify Comments", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"Spotify\",\n    \"sources\": {\"reddit_subreddit\": \"spotify\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}},
+				{"name": "Get r/whatsapp Comments", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"WhatsApp\",\n    \"sources\": {\"reddit_subreddit\": \"whatsapp\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}},
+				{"name": "Test Invalid Subreddit", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"Fake\",\n    \"sources\": {\"reddit_subreddit\": \"thissubredditdoesnotexist12345\"}\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}}
+			]
+		},
+		{
+			"name": "Combined Sources",
+			"item": [
+				{"name": "WhatsApp (All Mobile)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n    \"product_name\": \"WhatsApp\",\n    \"sources\": {\n        \"google_play_app\": \"com.whatsapp\",\n        \"ios_app\": \"310633997\"\n    }\n}"}, "url": {"raw": "{{base_url}}/api/reviews", "host": ["{{base_url}}"], "path": ["api", "reviews"]}}}
+			]
+		}
+	]
+}

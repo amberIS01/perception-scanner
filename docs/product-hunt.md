@@ -98,13 +98,14 @@ Product Hunt API has the following rate limits:
 
 ## Data Retrieved
 
-| Field      | Description                   |
-| ---------- | ----------------------------- |
-| id         | Comment ID                    |
-| user       | Commenter's name or username  |
-| comment    | Comment body text             |
-| date       | Comment creation date         |
-| user_image | Commenter's profile image URL |
+| Field   | Description                              |
+| ------- | ---------------------------------------- |
+| id      | Comment ID                               |
+| user    | Commenter's name or username             |
+| comment | Comment body text                        |
+| date    | Comment creation date (YYYY-MM-DD)       |
+| rating  | Always null (no ratings on Product Hunt) |
+| likes   | Always null (not extracted)              |
 
 ## Terms & Conditions
 

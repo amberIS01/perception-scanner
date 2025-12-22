@@ -1,10 +1,11 @@
+import os
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 from sqlalchemy.orm import Session
 
-from config import settings
+from config import DEFAULT_REVIEW_COUNT
 from database import init_db, get_db, DatabaseService
 from services.sources import (
     GooglePlaySource,
@@ -18,10 +19,7 @@ from services.sentiment import sentiment_analyzer
 # Initialize database
 init_db()
 
-app = FastAPI(
-    title=settings.app_name,
-    debug=settings.debug
-)
+app = FastAPI(title="Perception Scanner")
 
 # Initialize sources
 google_play_source = GooglePlaySource()
@@ -32,7 +30,7 @@ reddit_source = RedditSource()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -67,6 +65,8 @@ def process_source_result(source_result) -> dict:
         "sentiment": {
             "overall": sentiment["overall"],
             "breakdown": sentiment["breakdown"],
+            "percentages": sentiment["percentages"],
+            "total_analyzed": sentiment["total_analyzed"],
             "average_score": sentiment["average_score"],
             "keywords": sentiment["keywords"][:10]
         }
@@ -78,16 +78,15 @@ async def health_check():
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "app": settings.app_name,
         "sources": {
             "google_play": {"available": True, "requires_key": False},
             "ios_app_store": {"available": True, "requires_key": False},
             "youtube": {
-                "available": settings.youtube_api_key is not None,
+                "available": os.getenv("YOUTUBE_API_KEY") is not None,
                 "requires_key": True
             },
             "product_hunt": {
-                "available": settings.product_hunt_api_token is not None,
+                "available": os.getenv("PRODUCT_HUNT_API_TOKEN") is not None,
                 "requires_key": True
             },
             "reddit": {"available": True, "requires_key": False},
@@ -119,7 +118,7 @@ async def get_reviews(request: ProductReviewRequest, db: Session = Depends(get_d
     }
 
     all_reviews = []
-    count = settings.default_review_count
+    count = DEFAULT_REVIEW_COUNT
 
     # Google Play Store
     if request.sources.google_play_app:
@@ -223,6 +222,8 @@ async def get_reviews(request: ProductReviewRequest, db: Session = Depends(get_d
         result["combined_sentiment"] = {
             "overall": combined["overall"],
             "breakdown": combined["breakdown"],
+            "percentages": combined["percentages"],
+            "total_analyzed": combined["total_analyzed"],
             "average_score": combined["average_score"],
             "keywords": combined["keywords"][:20]
         }
@@ -300,9 +301,4 @@ async def get_stored_reviews(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "main:app",
-        host=settings.host,
-        port=settings.port,
-        reload=settings.debug
-    )
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

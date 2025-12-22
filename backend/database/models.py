@@ -1,13 +1,10 @@
 from datetime import datetime
-from typing import Optional
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
-from config import settings
-
 Base = declarative_base()
-engine = create_engine(settings.database_url, connect_args={"check_same_thread": False})
+engine = create_engine("sqlite:///./perception_scanner.db", connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -36,14 +33,10 @@ class Review(Base):
     external_id = Column(String(255), nullable=False)
     platform = Column(String(50), nullable=False, index=True)
     user = Column(String(255), nullable=True)
-    user_image = Column(Text, nullable=True)
     rating = Column(Float, nullable=True)
     comment = Column(Text, nullable=True)
-    title = Column(String(500), nullable=True)
     review_date = Column(String(50), nullable=True)
     likes = Column(Integer, default=0)
-    app_version = Column(String(50), nullable=True)
-    url = Column(Text, nullable=True)
     sentiment_score = Column(Float, nullable=True)
     sentiment_label = Column(String(20), nullable=True)
     fetched_at = Column(DateTime, default=datetime.utcnow)

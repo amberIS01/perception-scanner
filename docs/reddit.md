@@ -88,12 +88,12 @@ Since this uses public endpoints (not the official API):
 
 | Field   | Description                      |
 | ------- | -------------------------------- |
-| id      | Reddit post ID                   |
+| id      | Reddit comment ID                |
 | user    | Author's username                |
-| comment | Post title + selftext content    |
-| date    | Post creation date               |
-| likes   | Post score (upvotes - downvotes) |
-| url     | Link to the original post        |
+| comment | Comment body text                |
+| date    | Comment creation date            |
+| likes   | Comment score (upvotes - downvotes) |
+| rating  | Always null (no ratings)         |
 
 ## Terms & Conditions
 

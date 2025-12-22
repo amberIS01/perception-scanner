@@ -4,8 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Star, Youtube, TrendingUp, Smartphone, AppWindow, MessageCircle, AlertCircle } from 'lucide-react'
+import { Star, Youtube, TrendingUp, Smartphone, AppWindow, MessageCircle, AlertCircle, BarChart3, ChevronDown, ChevronUp } from 'lucide-react'
+import {
+  SentimentStackedBar,
+  KeywordBarChart,
+  VerticalSentimentBars,
+} from '@/components/charts/SentimentCharts'
 
+// Single review from any platform
 interface Review {
   id: string
   user: string
@@ -13,27 +19,28 @@ interface Review {
   comment: string
   date: string
   likes?: number
-  upvotes?: number
-  helpful?: number
   platform: string
 }
 
+// VADER sentiment analysis result
 interface SentimentData {
-  overall: {
-    positive_percent: number
-    neutral_percent: number
-    negative_percent: number
-    average_score: number
-    total_analyzed: number
-  }
+  overall: string
   breakdown: {
     positive: number
     neutral: number
     negative: number
   }
-  keywords: { word: string; count: number }[]
+  percentages: {
+    positive: number
+    neutral: number
+    negative: number
+  }
+  total_analyzed: number
+  average_score: number
+  keywords: { word: string; count: number; sentiment?: string; score?: number }[]
 }
 
+// Reviews from one platform (Google Play, iOS, YouTube, etc.)
 interface SourceReviews {
   platform: string
   identifier: string
@@ -44,6 +51,7 @@ interface SourceReviews {
   sentiment: SentimentData
 }
 
+// Full API response from POST /api/reviews
 interface ProductReviewsResponse {
   product_name: string
   sources: SourceReviews[]
@@ -51,6 +59,7 @@ interface ProductReviewsResponse {
   errors: { platform: string; error: string }[]
 }
 
+// User input: identifiers for each platform
 interface SourceConfig {
   youtube_video: string
   product_hunt_product: string
@@ -71,7 +80,11 @@ function App() {
   const [reviews, setReviews] = useState<ProductReviewsResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
+  const [showPlatformComparison, setShowPlatformComparison] = useState(false)
+  const [showKeywords, setShowKeywords] = useState(false)
+  const [showPlatformKeywords, setShowPlatformKeywords] = useState<Record<string, boolean>>({})
 
+  // Call backend API to fetch and analyze reviews
   const fetchReviews = async () => {
     setLoading(true)
     setError('')
@@ -96,6 +109,7 @@ function App() {
     }
   }
 
+  // Update source config when user types in input
   const handleSourceChange = (field: keyof SourceConfig, value: string) => {
     setSourceConfig(prev => ({
       ...prev,
@@ -103,8 +117,10 @@ function App() {
     }))
   }
 
+  // Enable scan button only if at least one source is configured
   const hasAnySource = Object.values(sourceConfig).some(v => v.trim() !== '')
 
+  // Render 1-5 star rating (Google Play and iOS only - others have no ratings)
   const renderStars = (rating: number | null) => {
     if (rating === null) return null
     return (
@@ -123,6 +139,7 @@ function App() {
     )
   }
 
+  // Return platform-specific icon with brand color
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case 'YouTube':
@@ -298,44 +315,70 @@ function App() {
             {reviews.combined_sentiment && (
               <Card className="border-gray-200 shadow-sm">
                 <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
-                  <CardTitle className="text-xl text-gray-900">Combined Sentiment Analysis</CardTitle>
+                  <CardTitle className="text-xl text-gray-900 flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Combined Sentiment Analysis
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="grid md:grid-cols-3 gap-6">
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-3xl font-bold text-green-600">
-                        {reviews.combined_sentiment.overall.positive_percent}%
-                      </div>
-                      <div className="text-sm text-green-700">Positive</div>
+                <CardContent className="pt-6 space-y-6">
+                  {/* Hero Sentiment Label */}
+                  <div className="text-center py-4">
+                    <div className={`text-5xl font-bold mb-2 ${
+                      reviews.combined_sentiment.overall === 'positive' ? 'text-green-600' :
+                      reviews.combined_sentiment.overall === 'negative' ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {reviews.combined_sentiment.overall.charAt(0).toUpperCase() + reviews.combined_sentiment.overall.slice(1)}
                     </div>
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-3xl font-bold text-gray-600">
-                        {reviews.combined_sentiment.overall.neutral_percent}%
-                      </div>
-                      <div className="text-sm text-gray-700">Neutral</div>
-                    </div>
-                    <div className="text-center p-4 bg-red-50 rounded-lg">
-                      <div className="text-3xl font-bold text-red-600">
-                        {reviews.combined_sentiment.overall.negative_percent}%
-                      </div>
-                      <div className="text-sm text-red-700">Negative</div>
+                    <div className="text-gray-500">
+                      Overall Sentiment • {reviews.combined_sentiment.total_analyzed} reviews
                     </div>
                   </div>
-                  {reviews.combined_sentiment.keywords.length > 0 && (
-                    <div className="mt-6">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Top Keywords</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {reviews.combined_sentiment.keywords.slice(0, 10).map((kw, idx) => (
-                          <span
-                            key={idx}
-                            className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                          >
-                            {kw.word} ({kw.count})
-                          </span>
-                        ))}
+
+                  {/* Single Stacked Bar */}
+                  <SentimentStackedBar percentages={reviews.combined_sentiment.percentages} />
+
+                  {/* Expandable Sections */}
+                  <div className="space-y-2 pt-4">
+                    {reviews.sources.filter(s => !s.error && s.sentiment).length > 1 && (
+                      <button
+                        onClick={() => setShowPlatformComparison(!showPlatformComparison)}
+                        className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <span className="text-sm font-medium text-gray-700">Platform Comparison</span>
+                        {showPlatformComparison ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+                      </button>
+                    )}
+                    {showPlatformComparison && reviews.sources.filter(s => !s.error && s.sentiment).length > 1 && (
+                      <div className="p-4 border border-gray-200 rounded-lg">
+                        <VerticalSentimentBars
+                          platforms={reviews.sources
+                            .filter(s => !s.error && s.sentiment)
+                            .map(s => ({
+                              platform: s.platform,
+                              percentages: s.sentiment.percentages,
+                              breakdown: s.sentiment.breakdown,
+                              average_score: s.sentiment.average_score,
+                              total_analyzed: s.sentiment.total_analyzed,
+                            }))}
+                        />
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                    {reviews.combined_sentiment.keywords.length > 0 && (
+                      <button
+                        onClick={() => setShowKeywords(!showKeywords)}
+                        className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <span className="text-sm font-medium text-gray-700">Top Keywords</span>
+                        {showKeywords ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+                      </button>
+                    )}
+                    {showKeywords && reviews.combined_sentiment.keywords.length > 0 && (
+                      <div className="p-4 border border-gray-200 rounded-lg">
+                        <KeywordBarChart keywords={reviews.combined_sentiment.keywords} maxItems={10} />
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -356,7 +399,7 @@ function App() {
                 </TabsList>
 
                 {reviews.sources.filter(s => !s.error).map((source) => (
-                  <TabsContent key={source.platform} value={source.platform} className="mt-6">
+                  <TabsContent key={source.platform} value={source.platform} className="mt-6 space-y-6">
                     <Card className="border-gray-200 shadow-sm">
                       <CardHeader className="bg-gray-50 border-b border-gray-200">
                         <div className="flex items-center justify-between">
@@ -378,7 +421,60 @@ function App() {
                           </div>
                         </div>
                       </CardHeader>
+                      {source.sentiment && (
+                        <CardContent className="pt-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                          {/* Simplified: Sentiment Label + Stacked Bar */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`text-2xl font-bold ${
+                                source.sentiment.overall === 'positive' ? 'text-green-600' :
+                                source.sentiment.overall === 'negative' ? 'text-red-600' : 'text-gray-600'
+                              }`}>
+                                {source.sentiment.overall.charAt(0).toUpperCase() + source.sentiment.overall.slice(1)}
+                              </div>
+                              <span className="text-sm text-gray-500">
+                                {source.sentiment.total_analyzed} reviews analyzed
+                              </span>
+                            </div>
+                          </div>
+
+                          <SentimentStackedBar percentages={source.sentiment.percentages} />
+
+                          {/* Expandable Keywords */}
+                          {source.sentiment.keywords && source.sentiment.keywords.length > 0 && (
+                            <div className="mt-4">
+                              <button
+                                onClick={() => setShowPlatformKeywords(prev => ({
+                                  ...prev,
+                                  [source.platform]: !prev[source.platform]
+                                }))}
+                                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800"
+                              >
+                                {showPlatformKeywords[source.platform] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                <span>Keywords</span>
+                              </button>
+                              {showPlatformKeywords[source.platform] && (
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {source.sentiment.keywords.slice(0, 8).map((kw, idx) => (
+                                    <span
+                                      key={idx}
+                                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        kw.sentiment === 'positive' ? 'bg-green-100 text-green-700' :
+                                        kw.sentiment === 'negative' ? 'bg-red-100 text-red-700' :
+                                        'bg-gray-100 text-gray-700'
+                                      }`}
+                                    >
+                                      {kw.word} ({kw.count})
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      )}
                       <CardContent className="space-y-4 pt-6">
+                        <h4 className="text-sm font-semibold text-gray-700">Reviews</h4>
                         {source.reviews.length === 0 ? (
                           <p className="text-gray-500 text-center py-8">No reviews found</p>
                         ) : (
@@ -395,12 +491,6 @@ function App() {
                                     <div className="flex flex-col items-end">
                                       {review.likes !== undefined && review.likes > 0 && (
                                         <span className="text-xs text-gray-600 font-medium">{review.likes} likes</span>
-                                      )}
-                                      {review.upvotes !== undefined && review.upvotes > 0 && (
-                                        <span className="text-xs text-gray-600 font-medium">{review.upvotes} upvotes</span>
-                                      )}
-                                      {review.helpful !== undefined && review.helpful > 0 && (
-                                        <span className="text-xs text-gray-600 font-medium">{review.helpful} helpful</span>
                                       )}
                                     </div>
                                   </div>

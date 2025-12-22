@@ -1,6 +1,6 @@
+import os
 import requests
 from .base import BaseSource, Review, SourceResult
-from config import settings
 
 
 class ProductHuntSource(BaseSource):
@@ -11,19 +11,19 @@ class ProductHuntSource(BaseSource):
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {settings.product_hunt_api_token}",
+            "Authorization": f"Bearer {os.getenv('PRODUCT_HUNT_API_TOKEN')}",
         }
         response = requests.post(
             self.api_url,
             headers=headers,
             json={"query": query},
-            timeout=settings.request_timeout
+            timeout=30
         )
         response.raise_for_status()
         return response.json()
 
     async def fetch_reviews(self, identifier: str, count: int = 100) -> SourceResult:
-        if not settings.product_hunt_api_token:
+        if not os.getenv("PRODUCT_HUNT_API_TOKEN"):
             return SourceResult(
                 platform=self.platform_name,
                 identifier=identifier,
@@ -51,7 +51,6 @@ class ProductHuntSource(BaseSource):
                                 user {{
                                     name
                                     username
-                                    profileImage
                                 }}
                             }}
                         }}
@@ -95,8 +94,7 @@ class ProductHuntSource(BaseSource):
                     rating=None,
                     comment=node.get("body", ""),
                     date=node.get("createdAt", "")[:10] if node.get("createdAt") else "",
-                    platform=self.platform_name,
-                    user_image=user.get("profileImage")
+                    platform=self.platform_name
                 )
                 review_list.append(review)
 

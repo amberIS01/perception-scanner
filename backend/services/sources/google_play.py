@@ -1,7 +1,6 @@
 from google_play_scraper import reviews, Sort
 from google_play_scraper.exceptions import NotFoundError
 from .base import BaseSource, Review, SourceResult
-from config import settings
 
 
 class GooglePlaySource(BaseSource):
@@ -11,8 +10,8 @@ class GooglePlaySource(BaseSource):
         try:
             result, _ = reviews(
                 identifier,
-                lang=settings.google_play_language,
-                country=settings.google_play_country,
+                lang="en",
+                country="us",
                 sort=Sort.NEWEST,
                 count=count
             )
@@ -37,9 +36,7 @@ class GooglePlaySource(BaseSource):
                     comment=r.get("content", ""),
                     date=str(r.get("at", ""))[:10] if r.get("at") else "",
                     platform=self.platform_name,
-                    likes=r.get("thumbsUpCount", 0),
-                    user_image=r.get("userImage"),
-                    app_version=r.get("reviewCreatedVersion")
+                    likes=r.get("thumbsUpCount", 0)
                 )
                 review_list.append(review)
 

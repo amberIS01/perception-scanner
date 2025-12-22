@@ -47,18 +47,16 @@ https://play.google.com/store/apps/details?id=com.whatsapp
 
 ## Data Retrieved
 
-| Field                    | Description                         |
-| ------------------------ | ----------------------------------- |
-| `reviewId`             | Unique review identifier            |
-| `userName`             | Reviewer's display name             |
-| `userImage`            | URL to reviewer's profile image     |
-| `content`              | Review text                         |
-| `score`                | Rating (1-5 stars)                  |
-| `thumbsUpCount`        | Number of "helpful" votes           |
-| `reviewCreatedVersion` | App version when review was written |
-| `at`                   | Review date/time                    |
-| `replyContent`         | Developer's reply (if any)          |
-| `repliedAt`            | Developer reply date (if any)       |
+The following fields are extracted and mapped to our standard Review model:
+
+| Source Field     | Review Field | Description               |
+| ---------------- | ------------ | ------------------------- |
+| `reviewId`       | `id`         | Unique review identifier  |
+| `userName`       | `user`       | Reviewer's display name   |
+| `content`        | `comment`    | Review text               |
+| `score`          | `rating`     | Rating (1-5 stars)        |
+| `thumbsUpCount`  | `likes`      | Number of "helpful" votes |
+| `at`             | `date`       | Review date (YYYY-MM-DD)  |
 
 ## Limitations
 

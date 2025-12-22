@@ -82,15 +82,14 @@ Since this uses web scraping (not an official API):
 
 ## Data Retrieved
 
-| Field       | Description                   |
-| ----------- | ----------------------------- |
-| id          | Unique review ID              |
-| user        | Reviewer's display name       |
-| rating      | Star rating (1-5)             |
-| title       | Review title                  |
-| content     | Review text content           |
-| date        | Review date                   |
-| app_version | App version at time of review |
+| Field   | Description                              |
+| ------- | ---------------------------------------- |
+| id      | Unique review ID                         |
+| user    | Reviewer's display name                  |
+| rating  | Star rating (1-5)                        |
+| comment | Review title + content combined          |
+| date    | Review date (YYYY-MM-DD)                 |
+| likes   | Always null (not available from source) |
 
 ## Terms & Conditions
 

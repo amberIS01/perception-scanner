@@ -1,19 +1,20 @@
+import os
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from .base import BaseSource, Review, SourceResult
-from config import settings
 
 
 class YouTubeSource(BaseSource):
     platform_name = "YouTube"
 
     def _get_youtube_client(self):
-        if not settings.youtube_api_key:
+        api_key = os.getenv("YOUTUBE_API_KEY")
+        if not api_key:
             return None
-        return build("youtube", "v3", developerKey=settings.youtube_api_key)
+        return build("youtube", "v3", developerKey=api_key)
 
     async def fetch_reviews(self, identifier: str, count: int = 100) -> SourceResult:
-        if not settings.youtube_api_key:
+        if not os.getenv("YOUTUBE_API_KEY"):
             return SourceResult(
                 platform=self.platform_name,
                 identifier=identifier,
@@ -62,8 +63,7 @@ class YouTubeSource(BaseSource):
                         comment=snippet.get("textDisplay", ""),
                         date=snippet.get("publishedAt", "")[:10],
                         platform=self.platform_name,
-                        likes=snippet.get("likeCount", 0),
-                        user_image=snippet.get("authorProfileImageUrl")
+                        likes=snippet.get("likeCount", 0)
                     )
                     review_list.append(review)
 

@@ -100,14 +100,10 @@ class DatabaseService:
                 external_id=external_id,
                 platform=platform,
                 user=r.get("user", "Anonymous"),
-                user_image=r.get("user_image"),
                 rating=r.get("rating"),
                 comment=comment,
-                title=r.get("title"),
                 review_date=r.get("date", ""),
                 likes=r.get("likes", 0),
-                app_version=r.get("app_version"),
-                url=r.get("url"),
                 sentiment_score=sentiment["compound"],
                 sentiment_label=sentiment_analyzer.get_sentiment_label(sentiment["compound"])
             )
@@ -132,25 +128,6 @@ class DatabaseService:
             query = query.filter(Review.platform == platform)
 
         return query.order_by(Review.fetched_at.desc()).limit(limit).all()
-
-    def get_cached_reviews(
-        self,
-        product_id: int,
-        platform: str,
-        max_age_hours: int = 24
-    ) -> Optional[List[Review]]:
-        """Get cached reviews if they're recent enough."""
-        cutoff = datetime.utcnow() - timedelta(hours=max_age_hours)
-
-        reviews = self.db.query(Review).filter(
-            and_(
-                Review.product_id == product_id,
-                Review.platform == platform,
-                Review.fetched_at >= cutoff
-            )
-        ).all()
-
-        return reviews if reviews else None
 
     # Sentiment snapshot operations
     def save_sentiment_snapshot(
@@ -196,18 +173,3 @@ class DatabaseService:
             query = query.filter(SentimentSnapshot.platform == platform)
 
         return query.order_by(SentimentSnapshot.created_at.desc()).all()
-
-    def get_latest_sentiment(
-        self,
-        product_id: int,
-        platform: Optional[str] = None
-    ) -> Optional[SentimentSnapshot]:
-        """Get the latest sentiment snapshot."""
-        query = self.db.query(SentimentSnapshot).filter(
-            SentimentSnapshot.product_id == product_id
-        )
-
-        if platform is not None:
-            query = query.filter(SentimentSnapshot.platform == platform)
-
-        return query.order_by(SentimentSnapshot.created_at.desc()).first()

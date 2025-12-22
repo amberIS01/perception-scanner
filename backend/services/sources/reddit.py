@@ -1,18 +1,17 @@
 import requests
 from datetime import datetime
 from .base import BaseSource, Review, SourceResult
-from config import settings
 
 
 class RedditSource(BaseSource):
     platform_name = "Reddit"
 
     def _fetch_json(self, url: str) -> dict:
-        headers = {"User-Agent": settings.reddit_user_agent}
+        headers = {"User-Agent": "PerceptionScanner/1.0"}
         response = requests.get(
             url,
             headers=headers,
-            timeout=settings.request_timeout
+            timeout=30
         )
         response.raise_for_status()
         return response.json()

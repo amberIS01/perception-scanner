@@ -118,9 +118,18 @@ class SentimentAnalyzer:
 
         keywords = self.extract_keywords(texts)
 
+        total_reviews = len(sentiments)
+        percentages = {
+            "positive": round((breakdown["positive"] / total_reviews) * 100, 1),
+            "negative": round((breakdown["negative"] / total_reviews) * 100, 1),
+            "neutral": round((breakdown["neutral"] / total_reviews) * 100, 1)
+        }
+
         return {
             "overall": overall,
             "breakdown": breakdown,
+            "percentages": percentages,
+            "total_analyzed": total_reviews,
             "average_score": round(avg_compound, 3),
             "keywords": keywords
         }
