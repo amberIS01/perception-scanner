@@ -1,3 +1,4 @@
+# Google Play Store reviews via google-play-scraper (no API key needed)
 from google_play_scraper import reviews, Sort
 from google_play_scraper.exceptions import NotFoundError
 from .base import BaseSource, Review, SourceResult

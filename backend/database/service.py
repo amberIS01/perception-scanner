@@ -1,3 +1,4 @@
+# Database CRUD operations for products, reviews, and sentiment
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session

@@ -1,3 +1,4 @@
+# SQLite database models for storing reviews and sentiment
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
@@ -8,6 +9,7 @@ engine = create_engine("sqlite:///./perception_scanner.db", connect_args={"check
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+# Product being scanned (e.g., Notion, WhatsApp)
 class Product(Base):
     __tablename__ = "products"
 
@@ -25,6 +27,7 @@ class Product(Base):
     sentiment_snapshots = relationship("SentimentSnapshot", back_populates="product", cascade="all, delete-orphan")
 
 
+# Individual review from any platform
 class Review(Base):
     __tablename__ = "reviews"
 
@@ -44,6 +47,7 @@ class Review(Base):
     product = relationship("Product", back_populates="reviews")
 
 
+# Aggregated sentiment at a point in time (for history tracking)
 class SentimentSnapshot(Base):
     __tablename__ = "sentiment_snapshots"
 

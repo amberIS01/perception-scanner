@@ -1,3 +1,4 @@
+# iOS App Store reviews via RSS feed scraper (no API key needed)
 import requests
 from app_store_web_scraper import AppStoreEntry
 from .base import BaseSource, Review, SourceResult

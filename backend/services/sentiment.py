@@ -1,3 +1,4 @@
+# Sentiment analysis using VADER (works well for social media text)
 from typing import List, Dict, Any
 from collections import Counter
 import re
@@ -77,6 +78,7 @@ class SentimentAnalyzer:
 
         return sorted(keywords, key=lambda x: x["count"], reverse=True)[:top_n]
 
+    # Main method - analyzes list of reviews and returns overall sentiment
     def analyze_reviews(self, reviews: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Analyze sentiment for a list of reviews."""
         if not reviews:
@@ -135,4 +137,5 @@ class SentimentAnalyzer:
         }
 
 
+# Singleton instance used by main.py and service.py
 sentiment_analyzer = SentimentAnalyzer()

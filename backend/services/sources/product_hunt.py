@@ -1,3 +1,4 @@
+# Product Hunt comments via GraphQL API (requires PRODUCT_HUNT_API_TOKEN)
 import os
 import requests
 from .base import BaseSource, Review, SourceResult

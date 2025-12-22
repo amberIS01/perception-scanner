@@ -1,3 +1,4 @@
+# Reddit comments via public JSON API (no API key needed)
 import requests
 from datetime import datetime
 from .base import BaseSource, Review, SourceResult

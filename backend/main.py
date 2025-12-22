@@ -1,3 +1,4 @@
+# FastAPI backend for Perception Scanner
 import os
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,6 +29,7 @@ youtube_source = YouTubeSource()
 product_hunt_source = ProductHuntSource()
 reddit_source = RedditSource()
 
+# Allow frontend to call API (CORS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -37,6 +39,7 @@ app.add_middleware(
 )
 
 
+# Request body: which platform identifiers to scan
 class SourceConfig(BaseModel):
     youtube_video: Optional[str] = None
     product_hunt_product: Optional[str] = None

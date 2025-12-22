@@ -1,8 +1,10 @@
+# Base classes for all review sources
 from abc import ABC, abstractmethod
 from typing import Optional, List
 from pydantic import BaseModel
 
 
+# Standard review format - all sources return this
 class Review(BaseModel):
     id: str
     user: str
@@ -13,6 +15,7 @@ class Review(BaseModel):
     likes: Optional[int] = None
 
 
+# What fetch_reviews() returns
 class SourceResult(BaseModel):
     platform: str
     identifier: str
@@ -22,6 +25,7 @@ class SourceResult(BaseModel):
     error: Optional[str] = None
 
 
+# Abstract class - all sources inherit from this
 class BaseSource(ABC):
     platform_name: str = "Unknown"
 

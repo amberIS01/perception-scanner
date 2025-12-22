@@ -1,3 +1,4 @@
+# YouTube comments via official API (requires YOUTUBE_API_KEY)
 import os
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
