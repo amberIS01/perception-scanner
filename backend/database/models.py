@@ -1,12 +1,12 @@
 # SQLite database models for storing reviews and sentiment
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Float, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import relationship
+
+from .connection import engine, SessionLocal
 
 Base = declarative_base()
-engine = create_engine("sqlite:///./perception_scanner.db", connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 # Product being scanned (e.g., Notion, WhatsApp)

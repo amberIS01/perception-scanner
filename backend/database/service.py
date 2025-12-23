@@ -23,6 +23,7 @@ class DatabaseService:
         reddit_subreddit: Optional[str] = None
     ) -> Product:
         """Get existing product or create a new one."""
+        name = name.strip().lower()
         product = self.db.query(Product).filter(Product.name == name).first()
 
         if not product:
@@ -65,6 +66,7 @@ class DatabaseService:
 
     def get_product_by_name(self, name: str) -> Optional[Product]:
         """Get product by name."""
+        name = name.strip().lower()
         return self.db.query(Product).filter(Product.name == name).first()
 
     # Review operations
