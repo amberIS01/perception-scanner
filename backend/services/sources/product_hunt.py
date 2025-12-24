@@ -1,4 +1,5 @@
-# Product Hunt reviews via GraphQL API (requires PRODUCT_HUNT_API_TOKEN)
+# Product Hunt comments via GraphQL API (requires PRODUCT_HUNT_API_TOKEN)
+# Note: Product Hunt API only exposes launch post comments, not product reviews
 import os
 import requests
 
@@ -37,6 +38,7 @@ class ProductHuntSource(BaseSource):
             )
 
         try:
+            # First try direct post lookup by slug
             query = f"""
             query {{
                 post(slug: "{identifier}") {{
@@ -84,13 +86,13 @@ class ProductHuntSource(BaseSource):
                     average_rating=0.0,
                     total_reviews=0,
                     reviews=[],
-                    error=f"Product '{identifier}' not found on Product Hunt"
+                    error=f"Post '{identifier}' not found. Use the post slug from the URL (e.g., 'notion-2-0', 'clickup-4-0')"
                 )
 
             review_list = []
             comments_data = post.get("comments", {}).get("edges", [])
 
-            # Get aggregate rating
+            # Get aggregate rating if available
             reviews_rating = post.get("reviewsRating") or 0.0
 
             for edge in comments_data:
