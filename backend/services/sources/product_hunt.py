@@ -44,15 +44,15 @@ class ProductHuntSource(BaseSource):
                     name
                     tagline
                     votesCount
-                    reviewsCount
+                    commentsCount
                     reviewsRating
-                    reviews(first: {count}, order: NEWEST) {{
+                    comments(first: {count}, order: NEWEST) {{
                         edges {{
                             node {{
                                 id
                                 body
-                                rating
                                 createdAt
+                                votesCount
                                 user {{
                                     name
                                     username
@@ -88,22 +88,22 @@ class ProductHuntSource(BaseSource):
                 )
 
             review_list = []
-            reviews_data = post.get("reviews", {}).get("edges", [])
+            comments_data = post.get("comments", {}).get("edges", [])
 
             # Get aggregate rating
             reviews_rating = post.get("reviewsRating") or 0.0
 
-            for edge in reviews_data:
+            for edge in comments_data:
                 node = edge.get("node", {})
                 user = node.get("user", {}) or {}
                 review = Review(
                     id=node.get("id", ""),
                     user=user.get("name") or user.get("username") or "Anonymous",
-                    rating=node.get("rating"),  # Individual review rating (1-5)
+                    rating=None,  # Comments don't have individual ratings
                     comment=node.get("body", ""),
                     date=node.get("createdAt", "")[:10] if node.get("createdAt") else "",
                     platform=self.platform_name,
-                    likes=None
+                    likes=node.get("votesCount", 0)
                 )
                 review_list.append(review)
 
@@ -111,7 +111,7 @@ class ProductHuntSource(BaseSource):
                 platform=self.platform_name,
                 identifier=identifier,
                 average_rating=reviews_rating,
-                total_reviews=post.get("reviewsCount", len(review_list)),
+                total_reviews=post.get("commentsCount", len(review_list)),
                 reviews=review_list
             )
 
