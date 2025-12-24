@@ -35,9 +35,10 @@ product_hunt_source = ProductHuntSource()
 reddit_source = RedditSource()
 
 # Allow frontend to call API (CORS)
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
