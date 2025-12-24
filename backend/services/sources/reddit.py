@@ -29,7 +29,7 @@ class RedditSource(BaseSource):
             if identifier.startswith("r/") or "/" in identifier:
                 url = f"https://www.reddit.com/{identifier}.json?limit={count}"
             else:
-                url = f"https://www.reddit.com/r/{identifier}/hot.json?limit=25"
+                url = f"https://www.reddit.com/r/{identifier}/new.json?limit=25"
 
             data = self._fetch_json(url)
 

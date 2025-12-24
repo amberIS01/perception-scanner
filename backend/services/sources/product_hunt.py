@@ -1,5 +1,4 @@
 # Product Hunt reviews via GraphQL API (requires PRODUCT_HUNT_API_TOKEN)
-# Note: API exposes comments + aggregate reviewsRating, not individual review ratings
 import os
 import requests
 
@@ -45,15 +44,15 @@ class ProductHuntSource(BaseSource):
                     name
                     tagline
                     votesCount
-                    commentsCount
+                    reviewsCount
                     reviewsRating
-                    comments(first: {min(count, 100)}) {{
+                    reviews(first: {count}, order: NEWEST) {{
                         edges {{
                             node {{
                                 id
                                 body
+                                rating
                                 createdAt
-                                votesCount
                                 user {{
                                     name
                                     username
@@ -89,22 +88,22 @@ class ProductHuntSource(BaseSource):
                 )
 
             review_list = []
-            comments_data = post.get("comments", {}).get("edges", [])
+            reviews_data = post.get("reviews", {}).get("edges", [])
 
-            # Get aggregate rating (not all products have ratings)
+            # Get aggregate rating
             reviews_rating = post.get("reviewsRating") or 0.0
 
-            for edge in comments_data:
+            for edge in reviews_data:
                 node = edge.get("node", {})
-                user = node.get("user", {})
+                user = node.get("user", {}) or {}
                 review = Review(
                     id=node.get("id", ""),
                     user=user.get("name") or user.get("username") or "Anonymous",
-                    rating=None,  # Individual comments don't have ratings in PH API
+                    rating=node.get("rating"),  # Individual review rating (1-5)
                     comment=node.get("body", ""),
                     date=node.get("createdAt", "")[:10] if node.get("createdAt") else "",
                     platform=self.platform_name,
-                    likes=node.get("votesCount", 0)
+                    likes=None
                 )
                 review_list.append(review)
 
@@ -112,7 +111,7 @@ class ProductHuntSource(BaseSource):
                 platform=self.platform_name,
                 identifier=identifier,
                 average_rating=reviews_rating,
-                total_reviews=post.get("commentsCount", len(review_list)),
+                total_reviews=post.get("reviewsCount", len(review_list)),
                 reviews=review_list
             )
 

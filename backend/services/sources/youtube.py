@@ -54,7 +54,8 @@ class YouTubeSource(BaseSource):
                     videoId=identifier,
                     maxResults=min(100, count - len(review_list)),
                     pageToken=next_page_token,
-                    textFormat="plainText"
+                    textFormat="plainText",
+                    order="time"  # Newest comments first
                 ).execute()
 
                 for item in response.get("items", []):
