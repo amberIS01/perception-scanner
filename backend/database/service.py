@@ -4,6 +4,7 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
+from config import DEFAULT_REVIEW_COUNT
 from .models import Product, Review, SentimentSnapshot
 from services.sentiment import sentiment_analyzer
 
@@ -122,7 +123,7 @@ class DatabaseService:
         self,
         product_id: int,
         platform: Optional[str] = None,
-        limit: int = 100
+        limit: int = DEFAULT_REVIEW_COUNT
     ) -> List[Review]:
         """Get reviews for a product."""
         query = self.db.query(Review).filter(Review.product_id == product_id)

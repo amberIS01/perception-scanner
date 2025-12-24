@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from typing import Optional, List
 from pydantic import BaseModel
 
+from config import DEFAULT_REVIEW_COUNT
+
 
 # Standard review format - all sources return this
 class Review(BaseModel):
@@ -30,7 +32,7 @@ class BaseSource(ABC):
     platform_name: str = "Unknown"
 
     @abstractmethod
-    async def fetch_reviews(self, identifier: str, count: int = 100) -> SourceResult:
+    async def fetch_reviews(self, identifier: str, count: int = DEFAULT_REVIEW_COUNT) -> SourceResult:
         """Fetch reviews from the source platform."""
         pass
 

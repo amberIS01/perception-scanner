@@ -2,6 +2,8 @@
 import os
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+
+from config import DEFAULT_REVIEW_COUNT
 from .base import BaseSource, Review, SourceResult
 
 
@@ -14,7 +16,7 @@ class YouTubeSource(BaseSource):
             return None
         return build("youtube", "v3", developerKey=api_key)
 
-    async def fetch_reviews(self, identifier: str, count: int = 100) -> SourceResult:
+    async def fetch_reviews(self, identifier: str, count: int = DEFAULT_REVIEW_COUNT) -> SourceResult:
         if not os.getenv("YOUTUBE_API_KEY"):
             return SourceResult(
                 platform=self.platform_name,

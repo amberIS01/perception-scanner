@@ -1,6 +1,8 @@
 # Reddit comments via public JSON API (no API key needed)
 import requests
 from datetime import datetime
+
+from config import DEFAULT_REVIEW_COUNT
 from .base import BaseSource, Review, SourceResult
 
 
@@ -22,7 +24,7 @@ class RedditSource(BaseSource):
             return ""
         return datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d')
 
-    async def fetch_reviews(self, identifier: str, count: int = 100) -> SourceResult:
+    async def fetch_reviews(self, identifier: str, count: int = DEFAULT_REVIEW_COUNT) -> SourceResult:
         try:
             if identifier.startswith("r/") or "/" in identifier:
                 url = f"https://www.reddit.com/{identifier}.json?limit={count}"

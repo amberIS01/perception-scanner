@@ -1,13 +1,15 @@
 # Google Play Store reviews via google-play-scraper (no API key needed)
 from google_play_scraper import reviews, Sort
 from google_play_scraper.exceptions import NotFoundError
+
+from config import DEFAULT_REVIEW_COUNT
 from .base import BaseSource, Review, SourceResult
 
 
 class GooglePlaySource(BaseSource):
     platform_name = "Google Play Store"
 
-    async def fetch_reviews(self, identifier: str, count: int = 100) -> SourceResult:
+    async def fetch_reviews(self, identifier: str, count: int = DEFAULT_REVIEW_COUNT) -> SourceResult:
         try:
             result, _ = reviews(
                 identifier,

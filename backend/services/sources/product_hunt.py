@@ -1,6 +1,8 @@
 # Product Hunt comments via GraphQL API (requires PRODUCT_HUNT_API_TOKEN)
 import os
 import requests
+
+from config import DEFAULT_REVIEW_COUNT
 from .base import BaseSource, Review, SourceResult
 
 
@@ -23,7 +25,7 @@ class ProductHuntSource(BaseSource):
         response.raise_for_status()
         return response.json()
 
-    async def fetch_reviews(self, identifier: str, count: int = 100) -> SourceResult:
+    async def fetch_reviews(self, identifier: str, count: int = DEFAULT_REVIEW_COUNT) -> SourceResult:
         if not os.getenv("PRODUCT_HUNT_API_TOKEN"):
             return SourceResult(
                 platform=self.platform_name,

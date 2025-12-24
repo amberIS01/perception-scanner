@@ -271,7 +271,7 @@ async def get_product_history(product_name: str, days: int = 30, db: Session = D
 async def get_stored_reviews(
     product_name: str,
     platform: Optional[str] = None,
-    limit: int = 100,
+    limit: int = DEFAULT_REVIEW_COUNT,
     db: Session = Depends(get_db)
 ):
     """Get stored reviews for a product."""

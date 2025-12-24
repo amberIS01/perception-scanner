@@ -1,6 +1,8 @@
 # iOS App Store reviews via RSS feed scraper (no API key needed)
 import requests
 from app_store_web_scraper import AppStoreEntry
+
+from config import DEFAULT_REVIEW_COUNT
 from .base import BaseSource, Review, SourceResult
 
 
@@ -18,7 +20,7 @@ class IOSAppStoreSource(BaseSource):
         except Exception:
             return False
 
-    async def fetch_reviews(self, identifier: str, count: int = 100) -> SourceResult:
+    async def fetch_reviews(self, identifier: str, count: int = DEFAULT_REVIEW_COUNT) -> SourceResult:
         try:
             if not self._validate_app(identifier):
                 return SourceResult(
