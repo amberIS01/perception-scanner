@@ -1,4 +1,5 @@
-# Product Hunt comments via GraphQL API (requires PRODUCT_HUNT_API_TOKEN)
+# Product Hunt reviews via GraphQL API (requires PRODUCT_HUNT_API_TOKEN)
+# Note: API exposes comments + aggregate reviewsRating, not individual review ratings
 import os
 import requests
 
@@ -45,12 +46,14 @@ class ProductHuntSource(BaseSource):
                     tagline
                     votesCount
                     commentsCount
+                    reviewsRating
                     comments(first: {min(count, 100)}) {{
                         edges {{
                             node {{
                                 id
                                 body
                                 createdAt
+                                votesCount
                                 user {{
                                     name
                                     username
@@ -88,23 +91,27 @@ class ProductHuntSource(BaseSource):
             review_list = []
             comments_data = post.get("comments", {}).get("edges", [])
 
+            # Get aggregate rating (not all products have ratings)
+            reviews_rating = post.get("reviewsRating") or 0.0
+
             for edge in comments_data:
                 node = edge.get("node", {})
                 user = node.get("user", {})
                 review = Review(
                     id=node.get("id", ""),
                     user=user.get("name") or user.get("username") or "Anonymous",
-                    rating=None,
+                    rating=None,  # Individual comments don't have ratings in PH API
                     comment=node.get("body", ""),
                     date=node.get("createdAt", "")[:10] if node.get("createdAt") else "",
-                    platform=self.platform_name
+                    platform=self.platform_name,
+                    likes=node.get("votesCount", 0)
                 )
                 review_list.append(review)
 
             return SourceResult(
                 platform=self.platform_name,
                 identifier=identifier,
-                average_rating=0.0,
+                average_rating=reviews_rating,
                 total_reviews=post.get("commentsCount", len(review_list)),
                 reviews=review_list
             )
