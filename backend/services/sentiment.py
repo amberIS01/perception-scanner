@@ -85,6 +85,8 @@ class SentimentAnalyzer:
             return {
                 "overall": "neutral",
                 "breakdown": {"positive": 0, "negative": 0, "neutral": 0},
+                "percentages": {"positive": 0.0, "negative": 0.0, "neutral": 0.0},
+                "total_analyzed": 0,
                 "average_score": 0.0,
                 "keywords": []
             }
@@ -103,6 +105,8 @@ class SentimentAnalyzer:
             return {
                 "overall": "neutral",
                 "breakdown": {"positive": 0, "negative": 0, "neutral": 0},
+                "percentages": {"positive": 0.0, "negative": 0.0, "neutral": 0.0},
+                "total_analyzed": 0,
                 "average_score": 0.0,
                 "keywords": []
             }
