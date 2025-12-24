@@ -11,6 +11,9 @@ import {
   VerticalSentimentBars,
 } from '@/components/charts/SentimentCharts'
 
+// API URL - uses env variable in production, localhost in dev
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 // Single review from any platform
 interface Review {
   id: string
@@ -89,7 +92,7 @@ function App() {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('http://localhost:8000/api/reviews', {
+      const response = await fetch(`${API_URL}/api/reviews`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +105,7 @@ function App() {
       const data = await response.json()
       setReviews(data)
     } catch {
-      setError('Failed to fetch reviews. Make sure the FastAPI server is running on http://localhost:8000')
+      setError('Failed to fetch reviews. Make sure the backend server is running.')
       setReviews(null)
     } finally {
       setLoading(false)
